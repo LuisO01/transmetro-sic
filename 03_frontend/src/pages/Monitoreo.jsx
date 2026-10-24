@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRecurso } from '../hooks/useRecurso.js';
-import { monitoreo } from '../api/endpoints.js';
+import { monitoreo, estaciones as apiEstaciones } from '../api/endpoints.js';
 import { Cargando, MensajeError, SinDatos, Etiqueta } from '../components/Estado.jsx';
 import { useAuth } from '../store/AuthContext.jsx';
 
@@ -17,24 +17,57 @@ export function Monitoreo() {
   const [aviso, setAviso] = useState(null);
   const [error, setError] = useState(null);
 
-  const resumen = useRecurso(() => monitoreo.resumen(), []);
-  const anden = useRecurso(() => monitoreo.anden(), []);
-  const disponibles = useRecurso(() => monitoreo.unidadesDisponibles(), []);
+  // El operador tiene su estacion en la cuenta y el servidor la resuelve solo.
+  // Los demas roles vigilan toda la red, de modo que deben elegir cual ven.
+  const eligeEstacion = usuario?.ambito !== 'estacion';
+  const [estacionId, setEstacionId] = useState('');
 
-  // El anden es información que cambia sola: se refresca cada 15 segundos y el
-  // reloj avanza cada segundo para la cuenta regresiva de la regla RF-10.
+  const catalogo = useRecurso(
+    () => (eligeEstacion ? apiEstaciones.listar({ estado: 'operativa' }) : Promise.resolve({ items: [] })),
+    [eligeEstacion],
+  );
+  // El catalogo de estaciones responde paginado, en `items`
+  const listaEstaciones = catalogo.datos?.items ?? [];
+
+  // Sin estacion elegida no hay nada que consultar: el anden y las unidades
+  // disponibles son siempre de una estacion concreta.
+  const filtros = estacionId ? { estacionId: Number(estacionId) } : undefined;
+  const listo = !eligeEstacion || Boolean(estacionId);
+  const vacio = Promise.resolve({ datos: [] });
+
+  const resumen = useRecurso(() => monitoreo.resumen(filtros), [estacionId]);
+  const anden = useRecurso(() => (listo ? monitoreo.anden(filtros) : vacio), [estacionId, listo]);
+  const disponibles = useRecurso(
+    () => (listo ? monitoreo.unidadesDisponibles(filtros) : vacio),
+    [estacionId, listo],
+  );
+
+  // La primera estacion del catalogo evita que la pantalla abra en blanco.
   useEffect(() => {
-    const reloj = setInterval(() => setAhora(Date.now()), 1000);
-    const refresco = setInterval(() => { anden.recargar(); resumen.recargar(); }, 15000);
-    return () => { clearInterval(reloj); clearInterval(refresco); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (eligeEstacion && !estacionId && listaEstaciones.length > 0) {
+      setEstacionId(String(listaEstaciones[0].id));
+    }
+  }, [eligeEstacion, estacionId, listaEstaciones]);
 
   function refrescarTodo() {
     anden.recargar();
     resumen.recargar();
     disponibles.recargar();
   }
+
+  // El refresco automatico se hace a traves de una referencia: asi los
+  // temporizadores se crean una sola vez, pero siempre recargan con la
+  // estacion elegida en ese momento y no con la del primer render.
+  const refrescar = useRef(() => {});
+  refrescar.current = () => { anden.recargar(); resumen.recargar(); };
+
+  // El anden es información que cambia sola: se refresca cada 15 segundos y el
+  // reloj avanza cada segundo para la cuenta regresiva de la regla RF-10.
+  useEffect(() => {
+    const reloj = setInterval(() => setAhora(Date.now()), 1000);
+    const refresco = setInterval(() => refrescar.current(), 15000);
+    return () => { clearInterval(reloj); clearInterval(refresco); };
+  }, []);
 
   async function ejecutar(fn, mensajeOk) {
     setError(null);
@@ -57,13 +90,31 @@ export function Monitoreo() {
         <div>
           <h1>Monitoreo de capacidad y servicio</h1>
           <p>
-            Estación {usuario?.estacion ?? 'sin asignar'} · el andén se actualiza solo cada 15 segundos
+            {eligeEstacion
+              ? 'Elija la estación que desea vigilar · el andén se actualiza solo cada 15 segundos'
+              : `Estación ${usuario?.estacion ?? 'sin asignar'} · el andén se actualiza solo cada 15 segundos`}
           </p>
         </div>
         <button type="button" className="boton boton--secundario" onClick={refrescarTodo}>
           Actualizar ahora
         </button>
       </header>
+
+      {eligeEstacion && (
+        <div className="filtros">
+          <label className="campo campo--linea">
+            <span>Estación</span>
+            <select value={estacionId} onChange={(e) => setEstacionId(e.target.value)}>
+              <option value="">Seleccione...</option>
+              {listaEstaciones.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.codigo} · {e.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       {r && (
         <div className="rejilla-4">
@@ -88,6 +139,8 @@ export function Monitoreo() {
           <button
             type="button"
             className="boton boton--primario"
+            disabled={!listo}
+            title={listo ? undefined : 'Elija primero la estación'}
             onClick={() => setAccion({ tipo: 'llegada' })}
           >
             Registrar llegada
@@ -97,7 +150,11 @@ export function Monitoreo() {
         {anden.cargando && <Cargando />}
         <MensajeError error={anden.error} onReintentar={anden.recargar} />
         {!anden.cargando && unidades.length === 0 && (
-          <SinDatos texto="No hay unidades en el andén. Registre una llegada para comenzar." />
+          <SinDatos
+            texto={listo
+              ? 'No hay unidades en el andén. Registre una llegada para comenzar.'
+              : 'Elija una estación para ver su andén.'}
+          />
         )}
 
         <div className="rejilla-andenes">
@@ -173,7 +230,10 @@ export function Monitoreo() {
           onCerrar={() => setAccion(null)}
           onConfirmar={(datos) => {
             setAccion(null);
-            ejecutar(() => monitoreo.registrarLlegada(datos), 'Llegada registrada en el andén.');
+            ejecutar(
+              () => monitoreo.registrarLlegada({ ...datos, ...filtros }),
+              'Llegada registrada en el andén.',
+            );
           }}
         />
       )}
@@ -190,6 +250,7 @@ export function Monitoreo() {
                 busId: Number(accion.unidad.bus_id),
                 viajeId: Number(accion.unidad.id),
                 pasajerosAbordo: pasajeros,
+                ...filtros,
               }),
               'Ocupación registrada.',
             );

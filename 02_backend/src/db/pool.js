@@ -40,6 +40,7 @@ export function consultar(texto, parametros = []) {
  */
 export async function enTransaccion(usuarioId, trabajo) {
   const cliente = await pool.connect();
+  let conexionRota = false;
   try {
     await cliente.query('BEGIN');
     if (usuarioId) {
@@ -50,10 +51,18 @@ export async function enTransaccion(usuarioId, trabajo) {
     await cliente.query('COMMIT');
     return resultado;
   } catch (error) {
-    await cliente.query('ROLLBACK');
+    try {
+      await cliente.query('ROLLBACK');
+    } catch (errorRollback) {
+      // Si ni el ROLLBACK pasa, la conexion quedo desincronizada y devolverla
+      // al conjunto contagia el fallo a las siguientes peticiones. Se descarta
+      // para que el conjunto abra una nueva.
+      console.error('[db] el ROLLBACK fallo, se descarta la conexion:', errorRollback.message);
+      conexionRota = true;
+    }
     throw error;
   } finally {
-    cliente.release();
+    cliente.release(conexionRota);
   }
 }
 

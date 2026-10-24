@@ -84,9 +84,11 @@ export const tablero = {
 
 // RF-09, RF-10
 export const monitoreo = {
-  resumen: () => api.get('/monitoreo/resumen'),
-  anden: () => api.get('/monitoreo/anden'),
-  unidadesDisponibles: () => api.get('/monitoreo/unidades-disponibles'),
+  // estacionId solo lo envian los roles que no estan atados a una estacion;
+  // para el operador la resuelve el servidor con su propia cuenta.
+  resumen: (filtros) => api.get('/monitoreo/resumen', filtros),
+  anden: (filtros) => api.get('/monitoreo/anden', filtros),
+  unidadesDisponibles: (filtros) => api.get('/monitoreo/unidades-disponibles', filtros),
   registrarLlegada: (datos) => api.post('/monitoreo/viajes', datos),
   registrarOcupacion: (datos) => api.post('/monitoreo/ocupacion', datos),
   despachar: (viajeId) => api.patch(`/monitoreo/viajes/${viajeId}/despacho`),

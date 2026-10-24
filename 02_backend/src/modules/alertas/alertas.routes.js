@@ -108,13 +108,17 @@ router.patch(
   validar({ params: idParam, body: atenderSchema }),
   asincrono(async (req, res) => {
     const datos = await enTransaccion(req.usuario.id, async (cliente) => {
+      // Los parametros van con su tipo explicito: $2 se usa como enum en la
+      // asignacion y dentro de un CASE, y sin el casteo el motor deduce dos
+      // tipos distintos para el mismo parametro y rechaza la sentencia.
       const { rows } = await cliente.query(
         `UPDATE alerta
-            SET estado        = $2,
-                atendida_en   = CASE WHEN $2 = 'cerrada' THEN now() ELSE atendida_en END,
-                atendida_por  = $3,
-                nota_atencion = COALESCE($4, nota_atencion)
-          WHERE id = $1
+            SET estado        = $2::estado_alerta,
+                atendida_en   = CASE WHEN $2::estado_alerta = 'cerrada'
+                                     THEN now() ELSE atendida_en END,
+                atendida_por  = $3::bigint,
+                nota_atencion = COALESCE($4::varchar, nota_atencion)
+          WHERE id = $1::bigint
           RETURNING *`,
         [req.params.id, req.body.estado, req.usuario.id, req.body.nota ?? null],
       );
