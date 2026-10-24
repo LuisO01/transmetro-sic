@@ -31,7 +31,10 @@ export const env = {
     minutosBloqueo: Number(process.env.MINUTOS_BLOQUEO ?? 15),
   },
 
-  corsOrigin: (process.env.CORS_ORIGIN ?? 'http://localhost:5173').split(','),
+  // Publicado como un solo servicio, la web viaja en el mismo origen que la
+  // API y no hay peticion cruzada; RENDER_EXTERNAL_URL cubre el caso de que
+  // algo se consulte desde fuera con la direccion publica del sitio.
+  corsOrigin: (process.env.CORS_ORIGIN ?? process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:5173').split(','),
 
   get esProduccion() {
     return this.nodeEnv === 'production';

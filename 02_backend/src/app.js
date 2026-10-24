@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -7,6 +10,12 @@ import { env } from './config/env.js';
 import rutas from './routes.js';
 import { pool } from './db/pool.js';
 import { rutaNoEncontrada, manejadorErrores } from './middlewares/errores.js';
+
+// En desarrollo la aplicacion web la sirve Vite en su propio puerto. Cuando el
+// sistema se publica como un solo servicio, el compilado de Vite se entrega
+// desde aqui, de modo que web y API comparten origen y no hace falta CORS.
+const aqui = path.dirname(fileURLToPath(import.meta.url));
+const directorioWeb = path.resolve(aqui, '..', '..', '03_frontend', 'dist');
 
 export function crearApp() {
   const app = express();
@@ -48,6 +57,19 @@ export function crearApp() {
   });
 
   app.use('/api/v1', rutas);
+
+  if (fs.existsSync(directorioWeb)) {
+    app.use(express.static(directorioWeb, { index: false, maxAge: '1h' }));
+
+    // El enrutamiento de la aplicacion ocurre en el navegador: cualquier ruta
+    // que no sea de la API devuelve el index y React decide que pantalla toca.
+    app.get(/^\/(?!api\/|salud$).*/, (_req, res, siguiente) => {
+      res.sendFile(path.join(directorioWeb, 'index.html'), (error) => {
+        if (error) siguiente(error);
+      });
+    });
+    console.log(`[api] sirviendo la aplicacion web desde ${directorioWeb}`);
+  }
 
   app.use(rutaNoEncontrada);
   app.use(manejadorErrores);

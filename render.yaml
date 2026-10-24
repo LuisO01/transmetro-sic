@@ -1,0 +1,52 @@
+# Despliegue del SIC Transmetro como un solo servicio web.
+#
+# El servicio sirve la aplicacion web compilada, la interfaz REST y la base de
+# datos PGlite dentro del mismo proceso. No requiere contratar una base de
+# datos aparte: el esquema y los datos de ejemplo se aplican en cada arranque,
+# de modo que el sitio siempre parte del mismo estado conocido.
+#
+# Para una operacion real se sustituye DATABASE_URL por la de un PostgreSQL
+# administrado, se sube DB_POOL_MAX a 10 y el comando de arranque pasa a ser
+# `npm start --prefix 02_backend`.
+services:
+  - type: web
+    name: transmetro-sic
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: >-
+      npm ci --prefix 03_frontend &&
+      npm run build --prefix 03_frontend &&
+      npm ci --prefix 02_backend --omit=dev
+    startCommand: node 02_backend/scripts/servidor-demo.js
+    healthCheckPath: /salud
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      # La base vive en el mismo proceso, escuchando solo en la interfaz local
+      - key: DATABASE_URL
+        value: postgresql://postgres:postgres@127.0.0.1:5433/postgres
+      - key: DB_SSL
+        value: "false"
+      # PGlite atiende una conexion a la vez
+      - key: DB_POOL_MAX
+        value: "1"
+      - key: DB_SCHEMA
+        value: transmetro
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 8h
+      - key: BCRYPT_ROUNDS
+        value: "12"
+      - key: MAX_INTENTOS_FALLIDOS
+        value: "5"
+      - key: MINUTOS_BLOQUEO
+        value: "15"
