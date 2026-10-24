@@ -1,0 +1,53 @@
+---
+title: SIC Transmetro - Diagrama de Componentes
+---
+flowchart LR
+    classDef comp fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef db fill:#dcf2e4,stroke:#1b7a3d,color:#16202c
+    classDef ext fill:#f2f5f9,stroke:#98a2b3,color:#16202c,stroke-dasharray: 4 3
+
+    subgraph FE["«component» Frontend SPA (React + Vite)"]
+        direction TB
+        PAG["«component»<br/>Páginas<br/>Login, Tablero, Líneas, Estaciones,<br/>Flota, Parqueos, Alertas, Usuarios"]:::comp
+        RUT["«component»<br/>Router + RutaProtegida"]:::comp
+        AUTHCTX["«component»<br/>AuthContext<br/>(sesión y permisos)"]:::comp
+        CLI["«component»<br/>Cliente HTTP<br/>(tokens y refresh)"]:::comp
+        RUT --> PAG
+        PAG --> AUTHCTX
+        PAG --> CLI
+        AUTHCTX --> CLI
+    end
+
+    subgraph BE["«component» API REST (Node.js + Express)"]
+        direction TB
+        RT["«component»<br/>Enrutador /api/v1"]:::comp
+        MW["«component»<br/>Middlewares<br/>autenticar, requiereNivel,<br/>resolverAmbito, validar, errores"]:::comp
+        subgraph MODS["Módulos de negocio"]
+            direction TB
+            M1["auth"]:::comp
+            M2["líneas / estaciones / accesos"]:::comp
+            M3["buses / parqueos"]:::comp
+            M4["alertas"]:::comp
+            M5["usuarios / municipalidades"]:::comp
+        end
+        DBA["«component»<br/>Acceso a datos<br/>pool pg + enTransaccion()"]:::comp
+        RT --> MW --> MODS --> DBA
+    end
+
+    subgraph BD["«database» PostgreSQL - esquema transmetro"]
+        direction TB
+        TAB["32 tablas<br/>+ restricciones CHECK / EXCLUDE"]:::db
+        REG["Reglas de negocio<br/>funciones y triggers"]:::db
+        VIS["12 vistas de consulta<br/>y reportes"]:::db
+        AUD["Bitácora de auditoría"]:::db
+        REG --> TAB
+        REG --> AUD
+        VIS --> TAB
+    end
+
+    CLI -- "HTTPS / JSON<br/>«interface» API REST" --> RT
+    DBA -- "TLS / protocolo PostgreSQL<br/>SET LOCAL app.usuario_id" --> TAB
+    DBA --> VIS
+
+    EXP["Exportación PDF / Excel<br/>(RF-14)"]:::ext
+    MODS -.-> EXP

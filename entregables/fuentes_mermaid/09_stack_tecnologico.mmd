@@ -1,0 +1,23 @@
+---
+title: SIC Transmetro - Stack tecnologico por capa
+---
+flowchart TB
+    classDef capa fill:#e6f0fb,stroke:#0057b8,color:#16202c,text-align:left
+    classDef datos fill:#dcf2e4,stroke:#1b7a3d,color:#16202c
+    classDef herr fill:#fff4dc,stroke:#b26a00,color:#16202c
+    classDef disp fill:#f2f5f9,stroke:#465162,color:#16202c
+
+    CLI["<b>Capa de presentación — navegador</b><br/>React 18.3 · React Router 6.28 · Vite 6<br/>JavaScript ES2022 con JSX · CSS3 propio (369 líneas)"]:::capa
+
+    APP["<b>Capa de aplicación — servidor</b><br/>Node.js 20 LTS · Express 4.21 · JavaScript ES2022<br/>zod 3.24 (validación) · pg 8.13 (pool de conexiones)<br/>JWT 9 · bcrypt 3 · Helmet 8 · CORS · rate-limit 7"]:::capa
+
+    BD["<b>Capa de datos — PostgreSQL 14+ (verificado en 18.3)</b><br/>SQL y PL/pgSQL · 32 tablas · 12 vistas · 76 llaves foráneas<br/>15 funciones · 29 disparadores · 37 índices<br/>Extensiones: btree_gist · citext · pgcrypto"]:::datos
+
+    HERR["<b>Herramientas de desarrollo y calidad</b><br/>Vitest 2 · Supertest 7 (pruebas) · PGlite (PostgreSQL en pruebas)<br/>ESLint 9 (análisis estático) · Mermaid 11 (22 diagramas) · Git"]:::herr
+
+    DESP["<b>Despliegue</b><br/>Hosting estático o CDN · Balanceador con TLS<br/>Servidor Node.js · PostgreSQL administrado con respaldo y réplica"]:::disp
+
+    CLI -- "HTTPS 443 · JSON" --> APP
+    APP -- "TCP 5432 · TLS" --> BD
+    HERR -. "verifican las tres capas" .-> APP
+    BD -. "se despliega en" .-> DESP

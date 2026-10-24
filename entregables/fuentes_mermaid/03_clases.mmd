@@ -1,0 +1,282 @@
+---
+title: SIC Transmetro - Diagrama de Clases (modelo de dominio)
+config:
+  layout: elk
+---
+classDiagram
+    direction TB
+
+    class Municipalidad {
+        -id: Long
+        -codigo: String
+        -nombre: String
+        -departamento: String
+        -activo: Boolean
+    }
+    class Linea {
+        -id: Long
+        -codigo: String
+        -nombre: String
+        -colorHex: String
+        -tipo: TipoLinea
+        -unidadesMinimas: Integer
+        -unidadesMaximas: Integer
+        -estado: EstadoLinea
+        +longitudKm(sentido) Decimal
+        +unidadesOperativas() Integer
+        +evaluarRangoUnidades() Alerta
+    }
+    class Estacion {
+        -id: Long
+        -codigo: String
+        -nombre: String
+        -tipo: TipoEstacion
+        -latitud: Decimal
+        -longitud: Decimal
+        -capacidadPersonas: Integer
+        -estado: EstadoEstacion
+        +cerrar()
+    }
+    class TramoRecorrido {
+        -sentido: Sentido
+        -ordenRecorrido: Integer
+        -distanciaKmSiguiente: Decimal
+        -tiempoEstimadoMin: Integer
+    }
+    class Acceso {
+        -id: Long
+        -codigo: String
+        -nombre: String
+        -tipo: TipoAcceso
+        -torniquetes: Integer
+        -guardiasMinimos: Integer
+        -estado: EstadoAcceso
+        +evaluarCobertura(fecha) Boolean
+    }
+    class Bus {
+        -id: Long
+        -placa: String
+        -numeroEconomico: String
+        -tipo: TipoBus
+        -capacidadSentados: Integer
+        -capacidadPie: Integer
+        -estado: EstadoBus
+        +capacidadTotal() Integer
+        +asignarALinea(linea, finalizarVigente)
+        +finalizarAsignacion()
+        +asignarParqueo(espacio)
+    }
+    class AsignacionLinea {
+        -fechaInicio: DateTime
+        -fechaFin: DateTime
+        -motivo: String
+        +esVigente() Boolean
+    }
+    class ParqueoPredio {
+        -id: Long
+        -codigo: String
+        -nombre: String
+        -capacidad: Integer
+        +espaciosLibres() Integer
+    }
+    class ParqueoEspacio {
+        -id: Long
+        -codigo: String
+        -tipoPermitido: TipoBus
+        -estado: EstadoEspacio
+    }
+    class AsignacionParqueo {
+        -fechaInicio: DateTime
+        -fechaFin: DateTime
+    }
+    class Persona {
+        <<abstract>>
+        -id: Long
+        -dpi: String
+        -nombres: String
+        -apellidos: String
+        -fechaNacimiento: Date
+        -telefono: String
+        -correo: String
+        -direccionResidencia: String
+    }
+    class Piloto {
+        -codigoPiloto: String
+        -numeroLicencia: String
+        -tipoLicencia: TipoLicencia
+        -vigenciaLicencia: Date
+        -estado: EstadoPersonal
+        +licenciaVigente() Boolean
+    }
+    class Guardia {
+        -codigoGuardia: String
+        -empresaSeguridad: String
+        -estado: EstadoPersonal
+    }
+    class FormacionEducativa {
+        -nivel: NivelEducativo
+        -institucion: String
+        -tituloObtenido: String
+        -anioInicio: Integer
+        -anioFin: Integer
+    }
+    class Turno {
+        -codigo: String
+        -horaInicio: Time
+        -horaFin: Time
+    }
+    class CoberturaGuardia {
+        -fecha: Date
+        -estado: EstadoCobertura
+    }
+    class Viaje {
+        -id: Long
+        -sentido: Sentido
+        -fechaHoraLlegada: DateTime
+        -fechaHoraSalida: DateTime
+        -ocupacionSalidaPct: Decimal
+        -estado: EstadoViaje
+        +puedeDespachar(ahora) Boolean
+        +despachar()
+    }
+    class RegistroOcupacion {
+        -fechaHora: DateTime
+        -pasajerosAbordo: Integer
+        -capacidadReferencia: Integer
+        +porcentajeOcupacion() Decimal
+        +esSobrecupo() Boolean
+    }
+    class Alerta {
+        -id: Long
+        -tipo: TipoAlerta
+        -severidad: Severidad
+        -estado: EstadoAlerta
+        -mensaje: String
+        -generadaEn: DateTime
+        +tomar(usuario)
+        +cerrar(usuario, nota)
+    }
+    class EquipoComputo {
+        -numeroSerie: String
+        -tipo: TipoEquipo
+        -direccionIp: String
+        -estado: EstadoEquipo
+    }
+    class RegistroConectividad {
+        -fechaHora: DateTime
+        -estadoEnlace: EstadoEnlace
+        -latenciaMs: Integer
+    }
+    class Tarjeta {
+        -numeroTarjetaHash: String
+        -ultimos4: String
+        -tipo: TipoTarjeta
+        -saldo: Decimal
+        -estado: EstadoTarjeta
+    }
+    class TransaccionPago {
+        -fechaHora: DateTime
+        -tipo: TipoTransaccion
+        -monto: Decimal
+        -referenciaExterna: String
+    }
+    class Conciliacion {
+        -fecha: Date
+        -montoSistema: Decimal
+        -montoReportado: Decimal
+        +diferencia() Decimal
+        +cuadrar()
+    }
+    class Usuario {
+        -id: Long
+        -username: String
+        -correo: String
+        -passwordHash: String
+        -estado: EstadoUsuario
+        -intentosFallidos: Integer
+        +autenticar(password) Boolean
+        +permisoEn(modulo) NivelPermiso
+        +cambiarPassword(actual, nueva)
+    }
+    class Rol {
+        -codigo: String
+        -nombre: String
+        -ambito: Ambito
+    }
+    class Modulo {
+        -codigo: String
+        -nombre: String
+    }
+    class Permiso {
+        -nivel: NivelPermiso
+    }
+    class RegistroAuditoria {
+        -fechaHora: DateTime
+        -accion: AccionAuditoria
+        -tablaAfectada: String
+        -datosAnteriores: JSON
+        -datosNuevos: JSON
+    }
+
+    class NivelPermiso {
+        <<enumeration>>
+        L
+        E
+        A
+    }
+    class EstadoBus {
+        <<enumeration>>
+        operativo
+        mantenimiento
+        fuera_servicio
+        baja
+    }
+    class TipoAlerta {
+        <<enumeration>>
+        rango_unidades
+        sobrecupo
+        bus_sin_parqueo
+        cobertura_guardias
+        conectividad
+        descuadre_conciliacion
+    }
+
+    Municipalidad "1" -- "0..*" Linea : sede
+    Municipalidad "1" -- "0..*" Estacion : administra
+    Municipalidad "1" -- "0..*" Bus : registra
+    Municipalidad "1" -- "0..*" ParqueoPredio : posee
+    Linea "1" *-- "1..*" TramoRecorrido : recorrido
+    TramoRecorrido "0..*" --> "1" Estacion : parada
+    Estacion "1" *-- "0..*" Acceso : accesos
+    Bus "1" -- "0..*" AsignacionLinea : historial
+    AsignacionLinea "0..*" --> "1" Linea
+    ParqueoPredio "1" *-- "1..*" ParqueoEspacio
+    Bus "1" -- "0..*" AsignacionParqueo
+    AsignacionParqueo "0..*" --> "1" ParqueoEspacio
+    Persona <|-- Piloto
+    Persona <|-- Guardia
+    Piloto "1" *-- "0..*" FormacionEducativa : historial educativo
+    Guardia "1" -- "0..*" CoberturaGuardia
+    CoberturaGuardia "0..*" --> "1" Acceso
+    CoberturaGuardia "0..*" --> "1" Turno
+    Bus "1" -- "0..*" Viaje
+    Linea "1" -- "0..*" Viaje
+    Piloto "0..1" -- "0..*" Viaje : conduce
+    Viaje "1" *-- "0..*" RegistroOcupacion
+    RegistroOcupacion "0..*" --> "1" Estacion
+    Alerta "0..*" --> "0..1" Linea
+    Alerta "0..*" --> "0..1" Estacion
+    Estacion "1" *-- "0..*" EquipoComputo
+    Estacion "1" -- "0..*" RegistroConectividad
+    Tarjeta "1" -- "0..*" TransaccionPago
+    TransaccionPago "0..*" --> "1" Estacion
+    Estacion "1" -- "0..*" Conciliacion
+    Usuario "0..*" -- "1..*" Rol : asume
+    Rol "1" *-- "0..*" Permiso
+    Permiso "0..*" --> "1" Modulo
+    Usuario "0..1" --> "0..1" Persona : expediente
+    Usuario "1" -- "0..*" RegistroAuditoria : genera
+    Usuario "0..1" -- "0..*" Alerta : atiende
+    Bus ..> EstadoBus
+    Permiso ..> NivelPermiso
+    Alerta ..> TipoAlerta

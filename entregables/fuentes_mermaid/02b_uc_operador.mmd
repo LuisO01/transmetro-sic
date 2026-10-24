@@ -1,0 +1,29 @@
+---
+title: "SIC Transmetro - Casos de Uso - Operador de estación"
+---
+flowchart LR
+    classDef actor fill:#fff,stroke:#16202c,stroke-width:2px,color:#16202c,font-weight:bold
+    classDef uc fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef inc fill:#fff4dc,stroke:#b26a00,color:#16202c
+    ACT["«actor»<br/>Operador de estación"]:::actor
+    subgraph SIS["Sistema SIC Transmetro"]
+        direction TB
+        UC01(["UC01 Iniciar sesión"]):::uc
+        UC04(["UC04 Consultar líneas, estaciones y recorridos"]):::uc
+        UC17(["UC17 Registrar ocupación de unidad"]):::uc
+        UC19(["UC19 Despachar unidad del andén"]):::uc
+        UC21(["UC21 Atender alertas"]):::uc
+        UC22(["UC22 Registrar estado de equipo y conectividad"]):::uc
+        UC23(["UC23 Conciliar pagos por tarjeta"]):::uc
+        UC20(["UC20 Validar espera de 5 minutos"]):::inc
+        UC18(["UC18 Generar alerta de sobrecupo"]):::inc
+    end
+    ACT --- UC01
+    ACT --- UC04
+    ACT --- UC17
+    ACT --- UC19
+    ACT --- UC21
+    ACT --- UC22
+    ACT --- UC23
+    UC19 -. "«include»" .-> UC20
+    UC18 -. "«extend»<br/>si ocupación > 150 %" .-> UC17

@@ -1,0 +1,39 @@
+---
+title: SIC Transmetro - Diagrama de Secuencia - Registrar ocupacion y despachar (UC17, UC19, RF-09, RF-10)
+---
+sequenceDiagram
+    autonumber
+    actor OP as Operador de estación
+    participant UI as Frontend React<br/>(móvil)
+    participant API as API REST<br/>Monitoreo
+    participant DB as PostgreSQL
+    participant TG as Trigger tg_sobrecupo
+
+    OP->>UI: Registra pasajeros a bordo de la unidad
+    UI->>API: POST /monitoreo/ocupacion {busId, estacionId, pasajeros}
+    API->>API: Verifica JWT, nivel MONITOREO >= E y su estación
+    API->>DB: SELECT capacidad_total FROM bus
+    API->>DB: INSERT registro_ocupacion (capacidad_referencia)
+    DB->>DB: Calcula porcentaje_ocupacion y sobrecupo (GENERATED)
+    DB->>TG: AFTER INSERT
+    alt pasajeros > 150 % de la capacidad
+        TG->>DB: fn_alerta_abrir('sobrecupo', 'critica')
+        API-->>UI: 201 + sobrecupo = true
+        UI-->>OP: Aviso de sobrecupo
+    else ocupación normal
+        API-->>UI: 201 + porcentaje
+    end
+
+    OP->>UI: Solicita despachar la unidad
+    UI->>API: PATCH /monitoreo/viajes/{id}/despacho
+    API->>DB: UPDATE viaje SET fecha_hora_salida = now()
+    DB->>DB: Evalúa CHECK ck_viaje_espera_minima
+    alt ocupación < 25 % y espera < 5 minutos
+        DB-->>API: error 23514 check_violation
+        API-->>UI: 422 ESPERA_INCUMPLIDA
+        UI-->>OP: Debe esperar hasta completar 5 minutos
+    else regla cumplida
+        DB-->>API: viaje despachado
+        API-->>UI: 200 OK
+        UI-->>OP: Unidad despachada
+    end

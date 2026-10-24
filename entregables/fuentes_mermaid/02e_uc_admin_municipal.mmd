@@ -1,0 +1,42 @@
+---
+title: "SIC Transmetro - Casos de Uso - Administrador municipal"
+---
+flowchart LR
+    classDef actor fill:#fff,stroke:#16202c,stroke-width:2px,color:#16202c,font-weight:bold
+    classDef uc fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef inc fill:#fff4dc,stroke:#b26a00,color:#16202c
+    ACT["«actor»<br/>Administrador municipal"]:::actor
+    subgraph SIS["Sistema SIC Transmetro"]
+        direction TB
+        UC01(["UC01 Iniciar sesión"]):::uc
+        UC02(["UC02 Gestionar usuarios y roles"]):::uc
+        UC05(["UC05 Gestionar líneas y recorrido"]):::uc
+        UC06(["UC06 Gestionar estaciones y accesos"]):::uc
+        UC08(["UC08 Gestionar unidades"]):::uc
+        UC09(["UC09 Asignar unidad a línea"]):::uc
+        UC11(["UC11 Asignar parqueo a unidad"]):::uc
+        UC13(["UC13 Gestionar expediente de pilotos"]):::uc
+        UC15(["UC15 Registrar cobertura de acceso"]):::uc
+        UC21(["UC21 Atender alertas"]):::uc
+        UC24(["UC24 Generar y exportar reportes"]):::uc
+        UC07(["UC07 Calcular longitud de línea"]):::inc
+        UC10(["UC10 Validar línea única activa"]):::inc
+        UC12(["UC12 Verificar rango de unidades por línea"]):::inc
+        UC16(["UC16 Validar mínimo de guardias"]):::inc
+    end
+    ACT --- UC01
+    ACT --- UC02
+    ACT --- UC05
+    ACT --- UC06
+    ACT --- UC08
+    ACT --- UC09
+    ACT --- UC11
+    ACT --- UC13
+    ACT --- UC15
+    ACT --- UC21
+    ACT --- UC24
+    UC05 -. "«include»" .-> UC07
+    UC09 -. "«include»" .-> UC10
+    UC09 -. "«include»" .-> UC12
+    UC08 -. "«include»" .-> UC12
+    UC15 -. "«include»" .-> UC16

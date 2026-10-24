@@ -1,0 +1,30 @@
+---
+title: SIC Transmetro - Diagrama de Estados - Unidad (Bus)
+---
+stateDiagram-v2
+    [*] --> Operativo : registrar unidad
+
+    state Operativo {
+        [*] --> SinLinea
+        SinLinea --> AsignadaALinea : asignarALinea() [sin asignación vigente]
+        AsignadaALinea --> AsignadaALinea : reasignar() [finalizarVigente = true]
+        AsignadaALinea --> SinLinea : finalizarAsignacion()
+        --
+        state "SinParqueo (abre alerta RF-06)" as SinParqueo
+        [*] --> SinParqueo
+        SinParqueo --> Parqueada : asignarParqueo()
+        Parqueada --> SinParqueo : liberarParqueo()
+    }
+
+    Operativo --> Mantenimiento : enviar a taller
+    Mantenimiento --> Operativo : liberar de taller
+    Operativo --> FueraDeServicio : falla grave
+    FueraDeServicio --> Mantenimiento : ingresar a reparación
+    Mantenimiento --> Baja : dar de baja
+    FueraDeServicio --> Baja : dar de baja
+    Baja --> [*]
+
+    note right of Mantenimiento
+        Al salir de Operativo se recalcula
+        el rango de unidades de su línea (RF-05)
+    end note

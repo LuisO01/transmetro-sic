@@ -1,0 +1,56 @@
+---
+title: "SIC Transmetro - ER - Dominio de pagos: tarjetas, transacciones y conciliacion (RF-12)"
+config:
+  layout: elk
+---
+erDiagram
+    TARJETA {
+        bigint id PK
+        varchar numero_tarjeta_hash UK "SHA-256"
+        char ultimos_4
+        enum tipo
+        numeric saldo "CHECK >= 0"
+        enum estado
+        bigint municipalidad_emisora_id FK
+        bigint titular_persona_id FK
+    }
+    TRANSACCION_PAGO {
+        bigint id PK
+        bigint tarjeta_id FK
+        bigint estacion_id FK
+        bigint acceso_id FK
+        timestamptz fecha_hora
+        enum tipo
+        numeric monto
+        varchar referencia_externa UK
+        enum estado
+    }
+    CONCILIACION {
+        bigint id PK
+        date fecha "UK fecha+estacion"
+        bigint estacion_id FK
+        integer total_transacciones
+        numeric monto_sistema
+        numeric monto_reportado
+        numeric diferencia "GENERATED"
+        enum estado
+    }
+    MUNICIPALIDAD {
+        bigint id PK "ver su dominio"
+    }
+    PERSONA {
+        bigint id PK "ver su dominio"
+    }
+    ESTACION {
+        bigint id PK "ver su dominio"
+    }
+    ACCESO {
+        bigint id PK "ver su dominio"
+    }
+
+    MUNICIPALIDAD |o--o{ TARJETA : "emite"
+    PERSONA |o--o{ TARJETA : "es titular"
+    TARJETA ||--o{ TRANSACCION_PAGO : "origina"
+    ESTACION ||--o{ TRANSACCION_PAGO : "capta"
+    ACCESO |o--o{ TRANSACCION_PAGO : "valida"
+    ESTACION ||--o{ CONCILIACION : "concilia"

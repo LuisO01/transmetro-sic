@@ -1,0 +1,62 @@
+---
+title: "SIC Transmetro - ER - Dominio de flota: unidades, asignacion y parqueos (RF-04, RF-05, RF-06)"
+config:
+  layout: elk
+---
+erDiagram
+    BUS {
+        bigint id PK
+        varchar placa UK
+        varchar numero_economico UK
+        bigint municipalidad_id FK
+        enum tipo
+        varchar marca
+        smallint anio
+        smallint capacidad_sentados
+        smallint capacidad_pie
+        integer capacidad_total "GENERATED"
+        enum estado
+    }
+    BUS_LINEA_ASIGNACION {
+        bigint id PK
+        bigint bus_id FK "EXCLUDE: una linea a la vez (RF-04)"
+        bigint linea_id FK
+        timestamptz fecha_inicio
+        timestamptz fecha_fin "NULL = vigente"
+        varchar motivo
+    }
+    PARQUEO_PREDIO {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        bigint municipalidad_id FK
+        integer capacidad
+    }
+    PARQUEO_ESPACIO {
+        bigint id PK
+        bigint predio_id FK
+        varchar codigo "UK predio+codigo"
+        enum tipo_permitido
+        enum estado
+    }
+    PARQUEO_ASIGNACION {
+        bigint id PK
+        bigint espacio_id FK "EXCLUDE: un bus por espacio (RF-06)"
+        bigint bus_id FK "EXCLUDE: un espacio por bus"
+        timestamptz fecha_inicio
+        timestamptz fecha_fin
+    }
+    MUNICIPALIDAD {
+        bigint id PK "ver su dominio"
+    }
+    LINEA {
+        bigint id PK "ver su dominio"
+    }
+
+    MUNICIPALIDAD ||--o{ BUS : "registra"
+    MUNICIPALIDAD ||--o{ PARQUEO_PREDIO : "posee"
+    BUS ||--o{ BUS_LINEA_ASIGNACION : "se asigna"
+    LINEA ||--o{ BUS_LINEA_ASIGNACION : "recibe"
+    PARQUEO_PREDIO ||--o{ PARQUEO_ESPACIO : "contiene"
+    PARQUEO_ESPACIO ||--o{ PARQUEO_ASIGNACION : "aloja"
+    BUS ||--o{ PARQUEO_ASIGNACION : "ocupa"

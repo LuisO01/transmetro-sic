@@ -1,0 +1,74 @@
+---
+title: "SIC Transmetro - ER - Dominio de personal: pilotos, guardias y cobertura (RF-07, RF-08)"
+config:
+  layout: elk
+---
+erDiagram
+    PERSONA {
+        bigint id PK
+        varchar dpi UK "13 digitos"
+        varchar nombres
+        varchar apellidos
+        date fecha_nacimiento
+        varchar telefono
+        citext correo
+        varchar direccion_residencia
+        varchar municipio_residencia
+        bigint municipalidad_id FK
+    }
+    PILOTO {
+        bigint persona_id PK,FK
+        varchar codigo_piloto UK
+        varchar numero_licencia UK
+        enum tipo_licencia
+        date vigencia_licencia
+        date fecha_ingreso
+        enum estado
+    }
+    PILOTO_EDUCACION {
+        bigint id PK
+        bigint piloto_id FK
+        enum nivel
+        varchar institucion
+        varchar titulo_obtenido
+        smallint anio_inicio
+        smallint anio_fin
+    }
+    GUARDIA {
+        bigint persona_id PK,FK
+        varchar codigo_guardia UK
+        varchar empresa_seguridad
+        varchar numero_credencial
+        date fecha_ingreso
+        enum estado
+    }
+    TURNO {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        time hora_inicio
+        time hora_fin
+        boolean cruza_medianoche
+    }
+    GUARDIA_ASIGNACION {
+        bigint id PK
+        bigint guardia_id FK "UK guardia+fecha+turno"
+        bigint acceso_id FK
+        bigint turno_id FK
+        date fecha
+        enum estado
+    }
+    MUNICIPALIDAD {
+        bigint id PK "ver su dominio"
+    }
+    ACCESO {
+        bigint id PK "ver su dominio"
+    }
+
+    MUNICIPALIDAD |o--o{ PERSONA : "empadrona"
+    PERSONA ||--o| PILOTO : "es"
+    PERSONA ||--o| GUARDIA : "es"
+    PILOTO ||--o{ PILOTO_EDUCACION : "acredita"
+    GUARDIA ||--o{ GUARDIA_ASIGNACION : "cubre"
+    ACCESO ||--o{ GUARDIA_ASIGNACION : "es cubierto"
+    TURNO ||--o{ GUARDIA_ASIGNACION : "define"

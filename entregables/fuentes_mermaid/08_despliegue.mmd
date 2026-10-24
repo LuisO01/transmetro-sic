@@ -1,0 +1,36 @@
+---
+title: SIC Transmetro - Diagrama de Despliegue
+---
+flowchart LR
+    classDef nodo fill:#f2f5f9,stroke:#16202c,stroke-width:2px,color:#16202c
+    classDef art fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef db fill:#dcf2e4,stroke:#1b7a3d,color:#16202c
+
+    subgraph CLIENTES["«device» Dispositivos de usuario"]
+        direction TB
+        PC["«device» PC de estación<br/>Navegador web"]:::nodo
+        MOV["«device» Tableta / teléfono<br/>Navegador web"]:::nodo
+    end
+
+    subgraph NUBE["«cloud» Proveedor en la nube"]
+        direction TB
+        subgraph WEB["«node» Hosting estático / CDN"]
+            SPA["«artifact»<br/>transmetro-sic-web<br/>(dist/ de Vite)"]:::art
+        end
+        subgraph APP["«node» Servidor de aplicación<br/>«executionEnvironment» Node.js 20+"]
+            APIART["«artifact»<br/>transmetro-sic-api<br/>(Express)"]:::art
+        end
+        subgraph DBN["«node» PostgreSQL administrado"]
+            PG[("«database»<br/>esquema transmetro")]:::db
+            RESP[("«artifact»<br/>Respaldos automáticos<br/>y réplica")]:::db
+        end
+        LB["«node» Balanceador<br/>certificado TLS"]:::nodo
+    end
+
+    PC -- "HTTPS 443" --> WEB
+    MOV -- "HTTPS 443" --> WEB
+    PC -- "HTTPS 443 /api/v1" --> LB
+    MOV -- "HTTPS 443 /api/v1" --> LB
+    LB -- "HTTP interno" --> APP
+    APP -- "TCP 5432 + TLS" --> PG
+    PG -. "respaldo diario<br/>y WAL continuo" .-> RESP

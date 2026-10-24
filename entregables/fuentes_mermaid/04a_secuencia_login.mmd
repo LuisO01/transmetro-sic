@@ -1,0 +1,42 @@
+---
+title: SIC Transmetro - Diagrama de Secuencia - Iniciar sesion (UC01, RF-15, RF-16)
+---
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant UI as Frontend React<br/>(Login.jsx)
+    participant API as API REST<br/>/auth/login
+    participant AS as AuthService
+    participant DB as PostgreSQL
+
+    U->>UI: Ingresa usuario y contraseña
+    UI->>API: POST /api/v1/auth/login (HTTPS)
+    API->>API: Limite de peticiones + validación (zod)
+    API->>AS: iniciarSesion(usuario, password)
+    AS->>DB: SELECT usuario WHERE username o correo
+    DB-->>AS: fila de usuario (password_hash, estado, bloqueado_hasta)
+
+    alt Usuario no existe
+        AS->>DB: INSERT bitacora_auditoria (LOGIN_FALLIDO)
+        AS-->>API: 401 Credenciales inválidas
+    else Cuenta bloqueada o inactiva
+        AS-->>API: 401 Cuenta bloqueada hasta ...
+    else Contraseña incorrecta
+        AS->>AS: bcrypt.compare() = false
+        AS->>DB: UPDATE intentos_fallidos (+1, bloquea al 5.º)
+        AS->>DB: INSERT bitacora_auditoria (LOGIN_FALLIDO)
+        AS-->>API: 401 Credenciales inválidas
+    else Contraseña correcta
+        AS->>AS: bcrypt.compare() = true
+        AS->>DB: UPDATE intentos_fallidos = 0, ultimo_acceso = now()
+        AS->>DB: SELECT roles y v_permisos_usuario
+        DB-->>AS: roles, ámbito y matriz {MODULO: L/E/A}
+        AS->>AS: Firmar accessToken (15 min) y refreshToken (8 h)
+        AS->>DB: INSERT sesion_refresh (hash SHA-256 del token)
+        AS->>DB: INSERT bitacora_auditoria (LOGIN)
+        AS-->>API: tokens + perfil + permisos
+    end
+
+    API-->>UI: Respuesta JSON
+    UI->>UI: Guarda tokens y arma el menú según permisos
+    UI-->>U: Tablero con los módulos de su rol

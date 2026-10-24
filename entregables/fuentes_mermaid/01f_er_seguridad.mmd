@@ -1,0 +1,82 @@
+---
+title: "SIC Transmetro - ER - Dominio de seguridad: usuarios, roles, permisos y bitacora (RF-15, RF-16)"
+config:
+  layout: elk
+---
+erDiagram
+    USUARIO {
+        bigint id PK
+        citext username UK
+        citext correo UK
+        varchar password_hash "bcrypt"
+        bigint persona_id FK
+        bigint municipalidad_id FK
+        bigint estacion_id FK
+        enum estado
+        smallint intentos_fallidos
+        timestamptz bloqueado_hasta
+    }
+    ROL {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        enum ambito
+    }
+    MODULO {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        smallint orden
+    }
+    ROL_PERMISO {
+        bigint rol_id PK,FK
+        bigint modulo_id PK,FK
+        enum nivel "L, E, A"
+    }
+    USUARIO_ROL {
+        bigint usuario_id PK,FK
+        bigint rol_id PK,FK
+        timestamptz asignado_en
+    }
+    SESION_REFRESH {
+        bigint id PK
+        bigint usuario_id FK
+        varchar token_hash UK
+        timestamptz expira_en
+        timestamptz revocado_en
+    }
+    BITACORA_AUDITORIA {
+        bigint id PK
+        timestamptz fecha_hora
+        bigint usuario_id FK
+        enum accion
+        varchar tabla_afectada
+        bigint registro_id
+        jsonb datos_anteriores
+        jsonb datos_nuevos
+    }
+    CLASIFICACION_INFORMACION {
+        bigint id PK
+        varchar tabla UK
+        enum clasificacion "Decreto 57-2008"
+        varchar fundamento
+    }
+    MUNICIPALIDAD {
+        bigint id PK "ver su dominio"
+    }
+    ESTACION {
+        bigint id PK "ver su dominio"
+    }
+    PERSONA {
+        bigint id PK "ver su dominio"
+    }
+
+    MUNICIPALIDAD |o--o{ USUARIO : "da de alta"
+    ESTACION |o--o{ USUARIO : "asignada a operador"
+    PERSONA |o--o| USUARIO : "tiene cuenta"
+    ROL ||--o{ ROL_PERMISO : "otorga"
+    MODULO ||--o{ ROL_PERMISO : "protege"
+    USUARIO ||--o{ USUARIO_ROL : "asume"
+    ROL ||--o{ USUARIO_ROL : "asignado a"
+    USUARIO ||--o{ SESION_REFRESH : "abre"
+    USUARIO |o--o{ BITACORA_AUDITORIA : "registra"

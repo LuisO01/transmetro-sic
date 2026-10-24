@@ -1,0 +1,94 @@
+---
+title: SIC Transmetro - Diagrama de Casos de Uso
+---
+flowchart LR
+    classDef actor fill:#fff,stroke:#16202c,stroke-width:2px,color:#16202c,font-weight:bold
+    classDef uc fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef inc fill:#fff4dc,stroke:#b26a00,color:#16202c
+
+    OP["«actor»<br/>Operador de estación"]:::actor
+    PI["«actor»<br/>Piloto"]:::actor
+    GU["«actor»<br/>Guardia de seguridad"]:::actor
+    AM["«actor»<br/>Administrador municipal"]:::actor
+    AG["«actor»<br/>Administrador general"]:::actor
+
+    AG -. "generalización<br/>(hereda todos sus casos)" .-> AM
+
+    subgraph SIS["Sistema SIC Transmetro"]
+        direction TB
+        subgraph SEG["Seguridad y administración"]
+            UC01(["UC01 Iniciar sesión"]):::uc
+            UC02(["UC02 Gestionar usuarios y roles"]):::uc
+            UC03(["UC03 Consultar bitácora de auditoría"]):::uc
+        end
+        subgraph RED["Líneas y estaciones"]
+            UC04(["UC04 Consultar líneas, estaciones y recorridos"]):::uc
+            UC05(["UC05 Gestionar líneas y recorrido"]):::uc
+            UC06(["UC06 Gestionar estaciones y accesos"]):::uc
+            UC07(["UC07 Calcular longitud de línea"]):::inc
+        end
+        subgraph FLO["Flota"]
+            UC08(["UC08 Gestionar unidades"]):::uc
+            UC09(["UC09 Asignar unidad a línea"]):::uc
+            UC10(["UC10 Validar línea única activa"]):::inc
+            UC11(["UC11 Asignar parqueo a unidad"]):::uc
+            UC12(["UC12 Verificar rango de unidades por línea"]):::inc
+        end
+        subgraph PER["Personal"]
+            UC13(["UC13 Gestionar expediente de pilotos"]):::uc
+            UC14(["UC14 Consultar expediente propio"]):::uc
+            UC15(["UC15 Registrar cobertura de acceso"]):::uc
+            UC16(["UC16 Validar mínimo de guardias"]):::inc
+        end
+        subgraph MON["Monitoreo de capacidad y servicio"]
+            UC17(["UC17 Registrar ocupación de unidad"]):::uc
+            UC18(["UC18 Generar alerta de sobrecupo"]):::inc
+            UC19(["UC19 Despachar unidad del andén"]):::uc
+            UC20(["UC20 Validar espera de 5 minutos"]):::inc
+            UC21(["UC21 Atender alertas"]):::uc
+        end
+        subgraph TEC["Técnica, pagos y reportes"]
+            UC22(["UC22 Registrar estado de equipo y conectividad"]):::uc
+            UC23(["UC23 Conciliar pagos por tarjeta"]):::uc
+            UC24(["UC24 Generar y exportar reportes"]):::uc
+        end
+    end
+
+    OP --- UC01
+    PI --- UC01
+    GU --- UC01
+    AM --- UC01
+
+    OP --- UC04
+    PI --- UC04
+    GU --- UC04
+    AM --- UC05
+    AM --- UC06
+    UC05 -. "«include»" .-> UC07
+
+    AM --- UC08
+    AM --- UC09
+    AM --- UC11
+    UC09 -. "«include»" .-> UC10
+    UC09 -. "«include»" .-> UC12
+    UC08 -. "«include»" .-> UC12
+
+    AM --- UC13
+    PI --- UC14
+    GU --- UC15
+    AM --- UC15
+    UC15 -. "«include»" .-> UC16
+
+    OP --- UC17
+    PI --- UC17
+    UC18 -. "«extend»<br/>si ocupación > 150 %" .-> UC17
+    OP --- UC19
+    UC19 -. "«include»" .-> UC20
+    OP --- UC21
+    AM --- UC21
+
+    OP --- UC22
+    OP --- UC23
+    AM --- UC24
+    AM --- UC02
+    AG --- UC03

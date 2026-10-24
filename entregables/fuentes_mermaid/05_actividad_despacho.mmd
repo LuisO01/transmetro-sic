@@ -1,0 +1,26 @@
+---
+title: SIC Transmetro - Diagrama de Actividades - Llegada, ocupacion y despacho de una unidad (RF-09, RF-10)
+---
+flowchart TD
+    classDef ini fill:#16202c,stroke:#16202c,color:#fff
+    classDef act fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef dec fill:#fff4dc,stroke:#b26a00,color:#16202c
+    classDef alerta fill:#fdecec,stroke:#c62828,color:#16202c
+
+    I((" ")):::ini --> A1["Unidad llega al andén"]:::act
+    A1 --> A2["Operador registra llegada<br/>(viaje: en_anden)"]:::act
+    A2 --> A3["Operador registra pasajeros a bordo"]:::act
+    A3 --> A4["Sistema calcula % de ocupación<br/>contra la capacidad de la unidad"]:::act
+    A4 --> D1{"¿Ocupación > 150 %?"}:::dec
+    D1 -- Sí --> A5["Generar alerta de sobrecupo<br/>(severidad crítica)"]:::alerta
+    A5 --> A6["Notificar en bandeja de alertas"]:::alerta
+    A6 --> D2
+    D1 -- No --> D2{"¿Ocupación < 25 %?"}:::dec
+    D2 -- No --> A8["Autorizar despacho inmediato"]:::act
+    D2 -- Sí --> D3{"¿Han pasado 5 minutos<br/>desde la llegada?"}:::dec
+    D3 -- No --> A7["Mantener unidad en andén<br/>y seguir abordando"]:::act
+    A7 --> A3
+    D3 -- Sí --> A8
+    A8 --> A9["Registrar hora de salida<br/>(viaje: despachado)"]:::act
+    A9 --> A10["Registrar en bitácora de auditoría"]:::act
+    A10 --> F(("◉")):::ini

@@ -1,0 +1,21 @@
+---
+title: "SIC Transmetro - Casos de Uso - Piloto"
+---
+flowchart LR
+    classDef actor fill:#fff,stroke:#16202c,stroke-width:2px,color:#16202c,font-weight:bold
+    classDef uc fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef inc fill:#fff4dc,stroke:#b26a00,color:#16202c
+    ACT["«actor»<br/>Piloto"]:::actor
+    subgraph SIS["Sistema SIC Transmetro"]
+        direction TB
+        UC01(["UC01 Iniciar sesión"]):::uc
+        UC04(["UC04 Consultar líneas, estaciones y recorridos"]):::uc
+        UC14(["UC14 Consultar expediente propio"]):::uc
+        UC17(["UC17 Registrar ocupación de unidad"]):::uc
+        UC18(["UC18 Generar alerta de sobrecupo"]):::inc
+    end
+    ACT --- UC01
+    ACT --- UC04
+    ACT --- UC14
+    ACT --- UC17
+    UC18 -. "«extend»<br/>si ocupación > 150 %" .-> UC17

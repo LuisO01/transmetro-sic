@@ -1,0 +1,19 @@
+---
+title: "SIC Transmetro - Casos de Uso - Guardia de seguridad"
+---
+flowchart LR
+    classDef actor fill:#fff,stroke:#16202c,stroke-width:2px,color:#16202c,font-weight:bold
+    classDef uc fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef inc fill:#fff4dc,stroke:#b26a00,color:#16202c
+    ACT["«actor»<br/>Guardia de seguridad"]:::actor
+    subgraph SIS["Sistema SIC Transmetro"]
+        direction TB
+        UC01(["UC01 Iniciar sesión"]):::uc
+        UC04(["UC04 Consultar líneas, estaciones y recorridos"]):::uc
+        UC15(["UC15 Registrar cobertura de acceso"]):::uc
+        UC16(["UC16 Validar mínimo de guardias"]):::inc
+    end
+    ACT --- UC01
+    ACT --- UC04
+    ACT --- UC15
+    UC15 -. "«include»" .-> UC16

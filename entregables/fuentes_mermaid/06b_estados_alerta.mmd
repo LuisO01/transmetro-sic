@@ -1,0 +1,16 @@
+---
+title: SIC Transmetro - Diagrama de Estados - Alerta
+---
+stateDiagram-v2
+    [*] --> Abierta : trigger detecta condición<br/>(rango, sobrecupo, parqueo, cobertura)
+    Abierta --> Abierta : la condición persiste<br/>(se actualiza, no se duplica)
+    Abierta --> EnRevision : operador o administrador la toma
+    EnRevision --> Cerrada : se atiende manualmente con nota
+    Abierta --> Cerrada : la condición se normaliza<br/>(cierre automático)
+    EnRevision --> Cerrada : la condición se normaliza
+    Cerrada --> [*]
+
+    note right of Abierta
+        Índice único parcial: solo una alerta
+        abierta por tipo y entidad
+    end note

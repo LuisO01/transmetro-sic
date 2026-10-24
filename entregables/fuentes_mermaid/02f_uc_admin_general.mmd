@@ -1,0 +1,21 @@
+---
+title: "SIC Transmetro - Casos de Uso - Administrador general"
+---
+flowchart LR
+    classDef actor fill:#fff,stroke:#16202c,stroke-width:2px,color:#16202c,font-weight:bold
+    classDef uc fill:#e6f0fb,stroke:#0057b8,color:#16202c
+    classDef inc fill:#fff4dc,stroke:#b26a00,color:#16202c
+    ACT["«actor»<br/>Administrador general"]:::actor
+    AM["«actor»<br/>Administrador municipal"]:::actor
+    ACT -. "generalización: hereda<br/>todos sus casos de uso" .-> AM
+    subgraph SIS["Sistema SIC Transmetro"]
+        direction TB
+        UC03(["UC03 Consultar bitácora de auditoría"]):::uc
+        UCX1(["Administrar catálogos de cualquier municipalidad"]):::uc
+        UCX2(["Crear administradores generales"]):::uc
+        UCX3(["Consultar y exportar reportes de toda la red"]):::uc
+    end
+    ACT --- UC03
+    ACT --- UCX1
+    ACT --- UCX2
+    ACT --- UCX3

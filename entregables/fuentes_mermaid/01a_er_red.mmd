@@ -1,0 +1,78 @@
+---
+title: "SIC Transmetro - ER - Dominio de red: lineas, estaciones y accesos (RF-01, RF-02, RF-03, RF-13)"
+config:
+  layout: elk
+---
+erDiagram
+    MUNICIPALIDAD {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre UK
+        varchar departamento
+        varchar nit
+        citext correo_contacto
+        boolean activo
+    }
+    LINEA {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre UK
+        char color_hex
+        enum tipo "troncal, alimentadora, expres"
+        bigint municipalidad_id FK
+        smallint unidades_minimas "RF-05"
+        smallint unidades_maximas "RF-05 >= minimas"
+        enum estado
+        date fecha_inicio_operacion
+        numeric tarifa "Q por viaje"
+        time hora_inicio
+        time hora_fin
+        smallint frecuencia_pico_min
+        smallint frecuencia_valle_min
+    }
+    PARAMETRO_SISTEMA {
+        varchar clave PK
+        varchar valor
+        varchar unidad
+        varchar descripcion
+        timestamptz actualizado_en
+        bigint actualizado_por FK
+    }
+    ESTACION {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        bigint municipalidad_id FK "RF-13"
+        enum tipo
+        numeric latitud
+        numeric longitud
+        integer capacidad_personas
+        enum estado
+    }
+    LINEA_ESTACION {
+        bigint id PK
+        bigint linea_id FK
+        bigint estacion_id FK
+        enum sentido "ida, vuelta"
+        smallint orden_recorrido "UK linea+sentido+orden"
+        numeric distancia_km_siguiente "RF-02"
+        smallint tiempo_estimado_min
+        boolean activo
+    }
+    ACCESO {
+        bigint id PK
+        bigint estacion_id FK
+        varchar codigo "UK estacion+codigo"
+        varchar nombre
+        enum tipo
+        smallint torniquetes
+        smallint guardias_minimos "RF-08"
+        enum estado
+    }
+
+
+    MUNICIPALIDAD ||--o{ LINEA : "es sede de"
+    MUNICIPALIDAD ||--o{ ESTACION : "administra"
+    LINEA ||--o{ LINEA_ESTACION : "recorre"
+    ESTACION ||--o{ LINEA_ESTACION : "forma parte de"
+    ESTACION ||--o{ ACCESO : "tiene"

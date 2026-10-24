@@ -1,0 +1,364 @@
+---
+title: SIC Transmetro - Diagrama Entidad Relacion completo (modelo logico, 32 tablas)
+config:
+  layout: elk
+---
+erDiagram
+    MUNICIPALIDAD {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre UK
+        varchar departamento
+        varchar nit
+        citext correo_contacto
+        boolean activo
+    }
+    LINEA {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre UK
+        char color_hex
+        enum tipo "troncal, alimentadora, expres"
+        bigint municipalidad_id FK
+        smallint unidades_minimas "RF-05"
+        smallint unidades_maximas "RF-05 >= minimas"
+        enum estado
+        date fecha_inicio_operacion
+        numeric tarifa "Q por viaje"
+        time hora_inicio
+        time hora_fin
+        smallint frecuencia_pico_min
+        smallint frecuencia_valle_min
+    }
+    ESTACION {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        bigint municipalidad_id FK "RF-13"
+        enum tipo
+        numeric latitud
+        numeric longitud
+        integer capacidad_personas
+        enum estado
+    }
+    LINEA_ESTACION {
+        bigint id PK
+        bigint linea_id FK
+        bigint estacion_id FK
+        enum sentido "ida, vuelta"
+        smallint orden_recorrido "UK linea+sentido+orden"
+        numeric distancia_km_siguiente "RF-02"
+        smallint tiempo_estimado_min
+        boolean activo
+    }
+    ACCESO {
+        bigint id PK
+        bigint estacion_id FK
+        varchar codigo "UK estacion+codigo"
+        varchar nombre
+        enum tipo
+        smallint torniquetes
+        smallint guardias_minimos "RF-08"
+        enum estado
+    }
+    BUS {
+        bigint id PK
+        varchar placa UK
+        varchar numero_economico UK
+        bigint municipalidad_id FK
+        enum tipo
+        varchar marca
+        smallint anio
+        smallint capacidad_sentados
+        smallint capacidad_pie
+        integer capacidad_total "GENERATED"
+        enum estado
+    }
+    BUS_LINEA_ASIGNACION {
+        bigint id PK
+        bigint bus_id FK "EXCLUDE: una linea a la vez (RF-04)"
+        bigint linea_id FK
+        timestamptz fecha_inicio
+        timestamptz fecha_fin "NULL = vigente"
+        varchar motivo
+    }
+    PARQUEO_PREDIO {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        bigint municipalidad_id FK
+        integer capacidad
+    }
+    PARQUEO_ESPACIO {
+        bigint id PK
+        bigint predio_id FK
+        varchar codigo "UK predio+codigo"
+        enum tipo_permitido
+        enum estado
+    }
+    PARQUEO_ASIGNACION {
+        bigint id PK
+        bigint espacio_id FK "EXCLUDE: un bus por espacio (RF-06)"
+        bigint bus_id FK "EXCLUDE: un espacio por bus"
+        timestamptz fecha_inicio
+        timestamptz fecha_fin
+    }
+    PERSONA {
+        bigint id PK
+        varchar dpi UK "13 digitos"
+        varchar nombres
+        varchar apellidos
+        date fecha_nacimiento
+        varchar telefono
+        citext correo
+        varchar direccion_residencia
+        varchar municipio_residencia
+        bigint municipalidad_id FK
+    }
+    PILOTO {
+        bigint persona_id PK,FK
+        varchar codigo_piloto UK
+        varchar numero_licencia UK
+        enum tipo_licencia
+        date vigencia_licencia
+        date fecha_ingreso
+        enum estado
+    }
+    PILOTO_EDUCACION {
+        bigint id PK
+        bigint piloto_id FK
+        enum nivel
+        varchar institucion
+        varchar titulo_obtenido
+        smallint anio_inicio
+        smallint anio_fin
+    }
+    GUARDIA {
+        bigint persona_id PK,FK
+        varchar codigo_guardia UK
+        varchar empresa_seguridad
+        varchar numero_credencial
+        date fecha_ingreso
+        enum estado
+    }
+    TURNO {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        time hora_inicio
+        time hora_fin
+        boolean cruza_medianoche
+    }
+    GUARDIA_ASIGNACION {
+        bigint id PK
+        bigint guardia_id FK "UK guardia+fecha+turno"
+        bigint acceso_id FK
+        bigint turno_id FK
+        date fecha
+        enum estado
+    }
+    VIAJE {
+        bigint id PK
+        bigint bus_id FK
+        bigint linea_id FK
+        bigint piloto_id FK
+        bigint estacion_origen_id FK
+        enum sentido
+        timestamptz fecha_hora_llegada
+        timestamptz fecha_hora_salida "CHECK espera 5 min (RF-10)"
+        numeric ocupacion_salida_pct
+        enum estado
+    }
+    REGISTRO_OCUPACION {
+        bigint id PK
+        bigint viaje_id FK
+        bigint bus_id FK
+        bigint estacion_id FK
+        timestamptz fecha_hora
+        integer pasajeros_abordo
+        integer capacidad_referencia
+        numeric porcentaje_ocupacion "GENERATED"
+        boolean sobrecupo "GENERATED > 150% (RF-09)"
+    }
+    ALERTA {
+        bigint id PK
+        enum tipo
+        enum severidad
+        enum estado
+        varchar entidad_tabla
+        bigint entidad_id
+        bigint linea_id FK
+        bigint estacion_id FK
+        varchar mensaje
+        jsonb detalle
+        timestamptz generada_en
+        bigint atendida_por FK
+    }
+    EQUIPO_COMPUTO {
+        bigint id PK
+        bigint estacion_id FK
+        enum tipo
+        varchar numero_serie UK
+        inet direccion_ip
+        enum estado
+    }
+    REGISTRO_CONECTIVIDAD {
+        bigint id PK
+        bigint estacion_id FK
+        bigint equipo_id FK
+        timestamptz fecha_hora
+        enum estado_enlace
+        integer latencia_ms
+    }
+    TARJETA {
+        bigint id PK
+        varchar numero_tarjeta_hash UK "SHA-256"
+        char ultimos_4
+        enum tipo
+        numeric saldo "CHECK >= 0"
+        enum estado
+        bigint municipalidad_emisora_id FK
+        bigint titular_persona_id FK
+    }
+    TRANSACCION_PAGO {
+        bigint id PK
+        bigint tarjeta_id FK
+        bigint estacion_id FK
+        bigint acceso_id FK
+        timestamptz fecha_hora
+        enum tipo
+        numeric monto
+        varchar referencia_externa UK
+        enum estado
+    }
+    CONCILIACION {
+        bigint id PK
+        date fecha "UK fecha+estacion"
+        bigint estacion_id FK
+        integer total_transacciones
+        numeric monto_sistema
+        numeric monto_reportado
+        numeric diferencia "GENERATED"
+        enum estado
+    }
+    ROL {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        enum ambito
+    }
+    MODULO {
+        bigint id PK
+        varchar codigo UK
+        varchar nombre
+        smallint orden
+    }
+    ROL_PERMISO {
+        bigint rol_id PK,FK
+        bigint modulo_id PK,FK
+        enum nivel "L, E, A"
+    }
+    USUARIO {
+        bigint id PK
+        citext username UK
+        citext correo UK
+        varchar password_hash "bcrypt"
+        bigint persona_id FK
+        bigint municipalidad_id FK
+        bigint estacion_id FK
+        enum estado
+        smallint intentos_fallidos
+        timestamptz bloqueado_hasta
+    }
+    USUARIO_ROL {
+        bigint usuario_id PK,FK
+        bigint rol_id PK,FK
+        timestamptz asignado_en
+    }
+    SESION_REFRESH {
+        bigint id PK
+        bigint usuario_id FK
+        varchar token_hash UK
+        timestamptz expira_en
+        timestamptz revocado_en
+    }
+    BITACORA_AUDITORIA {
+        bigint id PK
+        timestamptz fecha_hora
+        bigint usuario_id FK
+        enum accion
+        varchar tabla_afectada
+        bigint registro_id
+        jsonb datos_anteriores
+        jsonb datos_nuevos
+    }
+    PARAMETRO_SISTEMA {
+        varchar clave PK
+        varchar valor
+        varchar unidad
+        varchar descripcion
+        timestamptz actualizado_en
+        bigint actualizado_por FK
+    }
+    CLASIFICACION_INFORMACION {
+        bigint id PK
+        varchar tabla UK
+        enum clasificacion "Decreto 57-2008"
+        varchar fundamento
+    }
+
+    MUNICIPALIDAD ||--o{ LINEA : "es sede de"
+    MUNICIPALIDAD ||--o{ ESTACION : "administra"
+    MUNICIPALIDAD ||--o{ BUS : "registra"
+    MUNICIPALIDAD ||--o{ PARQUEO_PREDIO : "posee"
+    MUNICIPALIDAD |o--o{ PERSONA : "empadrona"
+    MUNICIPALIDAD |o--o{ USUARIO : "da de alta"
+    MUNICIPALIDAD |o--o{ TARJETA : "emite"
+
+    LINEA ||--o{ LINEA_ESTACION : "recorre"
+    ESTACION ||--o{ LINEA_ESTACION : "forma parte de"
+    ESTACION ||--o{ ACCESO : "tiene"
+    ESTACION |o--o{ USUARIO : "asignada a operador"
+
+    BUS ||--o{ BUS_LINEA_ASIGNACION : "se asigna"
+    LINEA ||--o{ BUS_LINEA_ASIGNACION : "recibe"
+    PARQUEO_PREDIO ||--o{ PARQUEO_ESPACIO : "contiene"
+    PARQUEO_ESPACIO ||--o{ PARQUEO_ASIGNACION : "aloja"
+    BUS ||--o{ PARQUEO_ASIGNACION : "ocupa"
+
+    PERSONA ||--o| PILOTO : "es"
+    PERSONA ||--o| GUARDIA : "es"
+    PERSONA |o--o| USUARIO : "tiene cuenta"
+    PERSONA |o--o{ TARJETA : "es titular"
+    PILOTO ||--o{ PILOTO_EDUCACION : "acredita"
+    GUARDIA ||--o{ GUARDIA_ASIGNACION : "cubre"
+    ACCESO ||--o{ GUARDIA_ASIGNACION : "es cubierto"
+    TURNO ||--o{ GUARDIA_ASIGNACION : "define"
+
+    BUS ||--o{ VIAJE : "realiza"
+    LINEA ||--o{ VIAJE : "ordena"
+    PILOTO |o--o{ VIAJE : "conduce"
+    ESTACION ||--o{ VIAJE : "despacha"
+    VIAJE |o--o{ REGISTRO_OCUPACION : "mide"
+    BUS ||--o{ REGISTRO_OCUPACION : "reporta"
+    ESTACION ||--o{ REGISTRO_OCUPACION : "se mide en"
+    LINEA |o--o{ ALERTA : "afecta"
+    ESTACION |o--o{ ALERTA : "afecta"
+    USUARIO |o--o{ ALERTA : "atiende"
+
+    ESTACION ||--o{ EQUIPO_COMPUTO : "opera"
+    ESTACION ||--o{ REGISTRO_CONECTIVIDAD : "reporta"
+    EQUIPO_COMPUTO |o--o{ REGISTRO_CONECTIVIDAD : "mide"
+
+    TARJETA ||--o{ TRANSACCION_PAGO : "origina"
+    ESTACION ||--o{ TRANSACCION_PAGO : "capta"
+    ACCESO |o--o{ TRANSACCION_PAGO : "valida"
+    ESTACION ||--o{ CONCILIACION : "concilia"
+
+    ROL ||--o{ ROL_PERMISO : "otorga"
+    MODULO ||--o{ ROL_PERMISO : "protege"
+    USUARIO ||--o{ USUARIO_ROL : "asume"
+    ROL ||--o{ USUARIO_ROL : "asignado a"
+    USUARIO ||--o{ SESION_REFRESH : "abre"
+    USUARIO |o--o{ BITACORA_AUDITORIA : "registra"
+    USUARIO |o--o{ PARAMETRO_SISTEMA : "actualiza"

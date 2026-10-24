@@ -1,0 +1,51 @@
+---
+title: SIC Transmetro - Diagrama de Secuencia - Asignar unidad a linea (UC09, RF-04, RF-05)
+---
+sequenceDiagram
+    autonumber
+    actor AM as Administrador municipal
+    participant UI as Frontend React<br/>(Flota.jsx)
+    participant MW as Middlewares<br/>autenticar / requiereNivel
+    participant BS as BusesService
+    participant DB as PostgreSQL
+    participant TG as Trigger<br/>tg_asignacion_rango_unidades
+
+    AM->>UI: Selecciona unidad y línea destino
+    UI->>MW: POST /api/v1/buses/{id}/asignacion {lineaId}
+    MW->>MW: Verifica JWT y nivel FLOTA >= E
+    MW->>MW: Verifica ámbito municipal de la unidad
+    MW->>BS: asignarALinea(busId, datos, usuarioId)
+    BS->>DB: BEGIN + set_config('app.usuario_id')
+    BS->>DB: SELECT bus ... FOR UPDATE
+    BS->>DB: SELECT asignación vigente (fecha_fin IS NULL)
+    DB-->>BS: asignación vigente en otra línea
+
+    alt Tiene asignación vigente y no se confirmó
+        BS->>DB: ROLLBACK
+        BS-->>UI: 409 BUS_YA_ASIGNADO (línea actual)
+        UI-->>AM: ¿Reasignar de todos modos?
+        AM->>UI: Confirma
+        UI->>MW: POST ... {lineaId, finalizarVigente: true}
+        MW->>BS: asignarALinea(...)
+        BS->>DB: BEGIN + SELECT ... FOR UPDATE
+        BS->>DB: UPDATE asignación vigente SET fecha_fin = now()
+    end
+
+    BS->>DB: INSERT bus_linea_asignacion
+    DB->>DB: Verifica EXCLUDE ex_bus_una_linea_a_la_vez
+    alt Traslape de periodos (acceso concurrente)
+        DB-->>BS: error 23P01 exclusion_violation
+        BS-->>UI: 409 BUS_YA_ASIGNADO
+    else Sin traslape
+        DB->>TG: AFTER INSERT / UPDATE
+        TG->>DB: fn_evaluar_rango_unidades(línea anterior y nueva)
+        alt Unidades fuera del rango mín/máx
+            TG->>DB: fn_alerta_abrir('rango_unidades')
+        else Dentro del rango
+            TG->>DB: fn_alerta_cerrar('rango_unidades')
+        end
+        DB->>DB: fn_auditoria() -> bitacora_auditoria
+        BS->>DB: COMMIT
+        BS-->>UI: 201 asignación creada
+        UI-->>AM: Unidad asignada a la nueva línea
+    end

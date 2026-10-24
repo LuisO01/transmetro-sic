@@ -1,0 +1,88 @@
+---
+title: "SIC Transmetro - ER - Dominio de operacion y tecnica: viajes, ocupacion, alertas, equipo (RF-09, RF-10, RF-11)"
+config:
+  layout: elk
+---
+erDiagram
+    VIAJE {
+        bigint id PK
+        bigint bus_id FK
+        bigint linea_id FK
+        bigint piloto_id FK
+        bigint estacion_origen_id FK
+        enum sentido
+        timestamptz fecha_hora_llegada
+        timestamptz fecha_hora_salida "CHECK espera 5 min (RF-10)"
+        numeric ocupacion_salida_pct
+        enum estado
+    }
+    REGISTRO_OCUPACION {
+        bigint id PK
+        bigint viaje_id FK
+        bigint bus_id FK
+        bigint estacion_id FK
+        timestamptz fecha_hora
+        integer pasajeros_abordo
+        integer capacidad_referencia
+        numeric porcentaje_ocupacion "GENERATED"
+        boolean sobrecupo "GENERATED > 150% (RF-09)"
+    }
+    ALERTA {
+        bigint id PK
+        enum tipo
+        enum severidad
+        enum estado
+        varchar entidad_tabla
+        bigint entidad_id
+        bigint linea_id FK
+        bigint estacion_id FK
+        varchar mensaje
+        jsonb detalle
+        timestamptz generada_en
+        bigint atendida_por FK
+    }
+    EQUIPO_COMPUTO {
+        bigint id PK
+        bigint estacion_id FK
+        enum tipo
+        varchar numero_serie UK
+        inet direccion_ip
+        enum estado
+    }
+    REGISTRO_CONECTIVIDAD {
+        bigint id PK
+        bigint estacion_id FK
+        bigint equipo_id FK
+        timestamptz fecha_hora
+        enum estado_enlace
+        integer latencia_ms
+    }
+    BUS {
+        bigint id PK "ver su dominio"
+    }
+    LINEA {
+        bigint id PK "ver su dominio"
+    }
+    PILOTO {
+        bigint persona_id PK "ver su dominio"
+    }
+    ESTACION {
+        bigint id PK "ver su dominio"
+    }
+    USUARIO {
+        bigint id PK "ver su dominio"
+    }
+
+    BUS ||--o{ VIAJE : "realiza"
+    LINEA ||--o{ VIAJE : "ordena"
+    PILOTO |o--o{ VIAJE : "conduce"
+    ESTACION ||--o{ VIAJE : "despacha"
+    VIAJE |o--o{ REGISTRO_OCUPACION : "mide"
+    BUS ||--o{ REGISTRO_OCUPACION : "reporta"
+    ESTACION ||--o{ REGISTRO_OCUPACION : "se mide en"
+    LINEA |o--o{ ALERTA : "afecta"
+    ESTACION |o--o{ ALERTA : "afecta"
+    USUARIO |o--o{ ALERTA : "atiende"
+    ESTACION ||--o{ EQUIPO_COMPUTO : "opera"
+    ESTACION ||--o{ REGISTRO_CONECTIVIDAD : "reporta"
+    EQUIPO_COMPUTO |o--o{ REGISTRO_CONECTIVIDAD : "mide"
