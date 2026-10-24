@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext.jsx';
 import { MensajeError } from '../components/Estado.jsx';
+import { CuentasDemo } from '../components/BandaDemo.jsx';
 
 export function Login() {
   const { iniciarSesion, autenticado, cargando } = useAuth();
@@ -74,6 +75,13 @@ export function Login() {
         <p className="login__nota">
           La conexion viaja cifrada por HTTPS y las contrasenas se almacenan con bcrypt.
         </p>
+
+        <CuentasDemo
+          onElegir={(u, p) => {
+            setUsuario(u);
+            setPassword(p);
+          }}
+        />
       </form>
     </div>
   );

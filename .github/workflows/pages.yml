@@ -1,0 +1,71 @@
+# Publica en GitHub Pages la demostracion de solo lectura del SIC Transmetro.
+#
+# Pages solo sirve archivos, de modo que lo que se publica es la aplicacion web
+# real acompañada de las respuestas que se capturaron de la API en ejecucion
+# (03_frontend/public/demo). El sistema completo, con su API y su base, se
+# ejecuta localmente con los comandos del README.
+name: Publicar la demostracion en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Una publicacion a la vez; si llegan varias, se atiende la ultima.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: 03_frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+        working-directory: 03_frontend
+
+      - name: Compilar en modo demostracion
+        run: npm run build
+        working-directory: 03_frontend
+        env:
+          # El sitio cuelga de /<repositorio>/ y el cliente HTTP se sustituye
+          # por el de demostracion, que lee las respuestas capturadas.
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_MODO_DEMO: 'true'
+
+      - name: Servir las rutas internas de la aplicacion
+        # Pages devuelve 404.html cuando no encuentra el archivo; al entregar
+        # el index, el enrutador del navegador resuelve la ruta.
+        run: cp dist/index.html dist/404.html
+        working-directory: 03_frontend
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: 03_frontend/dist
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4

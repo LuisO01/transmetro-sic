@@ -554,3 +554,37 @@ a { color: var(--azul); }
 @media (max-width: 900px) {
   .mapa { grid-template-columns: 1fr; }
 }
+
+/* --- Sitio de demostracion (GitHub Pages) -------------------------------- */
+.banda-demo {
+  background: #0b2545;
+  color: #e8eef6;
+  font-size: .82rem;
+  line-height: 1.45;
+  padding: .55rem 1.25rem;
+  text-align: center;
+}
+.banda-demo strong { color: #ffc978; }
+.banda-demo a { color: #9fc7ea; }
+
+.cuentas-demo { margin-top: 1rem; border-top: 1px solid var(--gris-200); padding-top: .9rem; }
+.cuentas-demo p { font-size: .8rem; color: var(--gris-700); margin: 0 0 .5rem; text-align: center; }
+.cuentas-demo code { background: var(--gris-100); padding: .05rem .3rem; border-radius: 4px; }
+.cuentas-demo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.cuentas-demo button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .5rem;
+  background: var(--gris-100);
+  border: 1px solid var(--gris-200);
+  border-radius: var(--radio);
+  padding: .4rem .6rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.cuentas-demo button:hover { background: var(--gris-200); }
+.cuentas-demo button strong { font-size: .84rem; }
+.cuentas-demo button span { font-size: .76rem; color: var(--gris-700); }

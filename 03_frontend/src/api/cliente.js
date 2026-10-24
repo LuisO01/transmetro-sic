@@ -31,8 +31,12 @@ export const almacenTokens = {
 
 export class ErrorApi extends Error {
   constructor({ codigo, mensaje, detalle, estado }) {
-    super(mensaje ?? 'Error de comunicacion con el servidor.');
+    const texto = mensaje ?? 'Error de comunicacion con el servidor.';
+    super(texto);
     this.name = 'ErrorApi';
+    // Las pantallas leen `mensaje`: sin esta copia mostraban siempre un
+    // generico y el mensaje de negocio de la API se perdia por el camino.
+    this.mensaje = texto;
     this.codigo = codigo ?? 'ERROR_RED';
     this.detalle = detalle;
     this.estado = estado;
@@ -70,6 +74,13 @@ async function refrescarSesion() {
 }
 
 async function ejecutar(ruta, opciones = {}, reintentar = true) {
+  // En el sitio publicado no hay servidor: las respuestas las sirve el cliente
+  // de demostracion a partir de las que se capturaron de la API real.
+  if (import.meta.env.VITE_MODO_DEMO === 'true') {
+    const { ejecutarDemo } = await import('./demo.js');
+    return ejecutarDemo(ruta, opciones);
+  }
+
   const cabeceras = { ...(opciones.headers ?? {}) };
   if (opciones.body !== undefined) cabeceras['Content-Type'] = 'application/json';
 

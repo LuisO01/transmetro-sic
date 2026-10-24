@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  // En GitHub Pages el sitio vive bajo /<repositorio>/, no en la raiz del
+  // dominio. VITE_BASE lo fija el flujo de publicacion; en local queda en '/'.
+  base: process.env.VITE_BASE ?? '/',
   server: {
     port: 5174,
     // El frontend llama a /api/... y Vite lo reenvia a la API en desarrollo,
