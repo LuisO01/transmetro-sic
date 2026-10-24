@@ -201,8 +201,8 @@ Los datos viven en `02_backend/.datos-pglite`.
 | Frontend | `npm run build` compila sin advertencias |
 | Backend | 9 pruebas de autenticación y matriz de permisos en verde (`npm test`) |
 | Ejecución del DDL contra un servidor real | **Hecho**: el script corre completo, dos veces seguidas, sobre PostgreSQL 18.3. Las reglas RF-04, RF-05, RF-06, RF-08, RF-09, RF-10 y RF-16 se probaron con datos válidos e inválidos |
-| Sistema completo en ejecución | **Hecho**: base, API y aplicación web funcionando juntas. Se verificaron 38 casos de prueba (CP-01 a CP-38), incluidos el andén con la regla de los 5 minutos, el sobrecupo, el expediente propio del piloto y la cobertura del guardia |
-| Pendiente conocido | Los casos de monitoreo y personal (CP-27 a CP-38) se ejecutaron de forma manual; su automatización es la primera tarea del sprint siguiente |
+| Sistema completo en ejecución | **Hecho**: base, API y aplicación web funcionando juntas. Se verificaron 40 casos de prueba (CP-01 a CP-40), incluidos el andén con la regla de los 5 minutos, el sobrecupo, el expediente propio del piloto, la cobertura del guardia y los dos casos de regresión de DEF-05 y DEF-06 |
+| Pendiente conocido | Los casos CP-27 a CP-40 se ejecutaron de forma manual; su automatización es la primera tarea del sprint siguiente. Los defectos DEF-05 y DEF-06 aparecieron justamente en caminos que ninguna prueba automatizada recorre |
 
 ---
 
